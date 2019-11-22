@@ -1,0 +1,52 @@
+    1. Create ER Diagram 
+        a. https://dataedo.com/kb/tools/datagrip/create-database-diagram
+    2. Get table record counts
+        a. SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'ezypos' order by TABLE_ROWS DESC;
+    3. Reduced the number of required fields of the following linked tables
+        a. Payments 
+        b. Products
+        c. Receipts
+        d. Ticketlines
+        e. Tickets
+            i. Required fields (10) are shown in the Tableau workbook. Datasource=ticketlines step3
+    4. Used SQLs/Tableau to verify the relationships of the tables found in 3
+        a. In payments
+            i. If there is a numerical TRANSID, PAYMENT is always magcard and vice-versa
+            ii. If PAYMENT is cash or free TRANSID is always ‘no ID’
+            iii. If PAYMENT is cashin or cashrefunds TRANSID is always NULL
+            iv. No other possibility for TRANSID field
+            v. RETURNMSG is NULL if PAYMENT is msgcard or cashin and vice-versa
+            vi. RETURNMSG is OK otherwise
+            vii. No other possibility for RETURNMSG field
+
+        b. In ticketlines, LINE is an item in the invoice. 
+            i. TICKET and  LINE in  ticketlines make a unique key
+                1. SELECT MIN(DIFF), MAX(DIFF) FROM (SELECT TICKET,MAX(LINE) - COUNT(*) DIFF FROM ticketlines GROUP BY  TICKET) AS A
+                2. SELECT TICKET, LINE, COUNT(*) CNT FROM ticketlines GROUP BY  TICKET, LINE HAVING CNT !=1
+            ii. ticketlines.TICKET=tickets.ID=receipts.ID=payment.RECEIPT 
+                1. Therefore, payment.RECEIPT=ticketlines.TICKET
+                    a. Tables tickets and receipts can be omitted when not used
+                    b. receipts table contains the date in DATENEW field
+                    c. Required fields (8) are shown in the Tableau workbook. Datasource=ticketlines
+                2.   TAXID filed 001 => 0.1 tax rate, else 0 tax rate. Corressponds to 10% GST on some items
+                3. Tallying item prices and payments:
+SELECT TICKET, PA, P, PA-P DIFF FROM (SELECT RECEIPT, SUM(TOTAL) AS PA FROM payments GROUP BY RECEIPT) A, (SELECT TICKET, SUM(UNITS * PRICE * IF(TAXID='001', 1.1, 1)) P FROM ticketlines GROUP BY TICKET) B WHERE A.RECEIPT=B.TICKET.	
+
+    5. As there can be multiple payments for an invoice, the following two data sources were made in Tableau
+        a. Invoices 
+        b. Payments
+    6. For sales and revenue forecasting,  the following sql can be used to extract data.
+SELECT TICKET, PRODUCT,pdcts.NAME, UNITS, PRICE, TAXID, DATENEW, pymnts.PAYMENT
+FROM ticketlines tls, receipts rcpts, products pdcts,payments pymnts
+WHERE tls.TICKET=rcpts.ID AND tls.PRODUCT=pdcts.ID AND pymnts.RECEIPT=tls.TICKET
+
+    7. 
+
+
+
+
+
+
+	
+
+
