@@ -1,0 +1,104 @@
+ROUGH SKETCH
+    • table1-(product and ticketlines tables)(ID-PRODUCTS colums intersection)
+    • Table2-(table1 and reciepts tables)(TICKET-ID column intersection)
+    • Remove ID from payments
+    • table3-(table2 and payments)(ID-RECEIPT column intersection)
+    • Change ‘NAME column in categories table to ‘CATERGORY_NAME to avoid name conflicts between tables(categories and table 3)
+    • Chnage catergories ID to CAT_ID to avoid name conflict
+    • table4-(table3 and catergories)(CATEGORY-CAT_ID)
+    • table5-filter(table4),selected-REFERENCE, NAME, PRICEBUY, PRICESELL, CATEGORY,UNITS, PRICE,DATENEW,RECEIPT, PAYMENT, TOTAL
+    • Sort by date
+	
+PROCEDURE FOLLOWED 
+    1. Create ER Diagram 
+        a. https://drive.google.com/drive/u/0/folders/1TCEpiKdAM4A9ys64KM9uVcXu2ax7H2ht
+    2. Get table record counts
+        a. SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'ezypos' order by TABLE_ROWS DESC;
+    3. Reduced the number of required fields of the following linked tables
+        a. Payments 
+        b. Products
+        c. Receipts
+        d. Ticketlines
+        e. Tickets
+        f. Categories
+    4. Verify the relationships between products and ticketlines tables from MYSQL workbensch search.
+    • Relationship: product.ID=ticketlines.PRODUCTS
+    • Create a new table called table1 intersecting two tables products and ticketlines.
+CREATE VIEW table1 AS SELECT
+ 	REFERENCE,NAME, PRICEBUY, PRICESELL, CATEGORY,TICKET, LINE, PRODUCT, UNITS, PRICE, TAXID
+FROM
+	retail.ticketlines
+    	INNER JOIN
+	retail.products ON ticketlines.PRODUCT = products.ID
+
+
+
+    5. Verify the relationships between table1 and receipts table from MYSQL workbensch search.
+    • Relationship: table1.TICKET = receipts.ID
+    • Create a new table called table2 intersecting two tables table1 and receipts.
+CREATE VIEW table2 AS
+	SELECT
+  	*
+	FROM
+    	retail.table1
+        	INNER JOIN
+    	retail.receipts ON table1.TICKET = receipts.ID
+
+
+
+    6.    To avoid name conflict between rest of the tables, remove ID column in payments   table
+    ALTER TABLE retail.payments DROP ID
+
+    7.    Verify the relationships between table2 and receipts table from MYSQL workbench
+    •   Relationship: table2.ID = payments.RECEIPT
+    •   Create a new table called table3 intersecting two tables table2 and payments.
+CREATE VIEW table3 AS
+	SELECT
+    	*
+	FROM
+    	retail.table2
+        	INNER JOIN
+    	retail.payments ON table2.ID = payments.RECEIPT
+
+
+
+    8.    Change ‘NAME column in categories table to ‘CATERGORY_NAME to avoid name conflicts  between tables(categories and table3) 
+ALTER TABLE categories CHANGE NAME CATERGORY_NAME varchar(255) 
+
+
+
+    9. Change categories ID to CAT_ID to avoid name conflict
+ALTER TABLE categories CHANGE ID CAT_ID varchar(255) 
+
+    10.  Verify the relationships between table3 and categories table from MYSQL workbench
+    •   Relationship: table3.CATEGORY = catergories.CAT_ID
+    •  Create a new table called table4  intersecting two tables table3 and categories.
+CREATE VIEW table4 AS
+	SELECT
+  	*
+	FROM
+    	retail.table3
+        	INNER JOIN
+    	retail.categories ON table3.CATEGORY = categories.CAT_ID
+
+
+
+    11. Create a new table5 with the filtered data from table4 and sort by date(DATENEW)
+    • Table5: (SELECTED REFERENCE, NAME, PRICEBUY, PRICESELL, CATEGORY,UNITS, PRICE,DATENEW,RECEIPT, PAYMENT, TOTAL)
+CREATE VIEW table5 AS
+	SELECT
+ 	DATENEW,REFERENCE, NAME, PRICEBUY, PRICESELL, CATERGORY_NAME,UNITS, PRICE,RECEIPT, PAYMENT, TOTAL
+	FROM
+    	retail.table4 ORDER BY DATENEW ASC
+
+
+
+    12. Now run the ‘data_rearange_1.py’ code in the CODES folder in this drive directory to obtain the requested table structure.  
+
+
+
+
+
+
+
+
